@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>DU0564</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;background:#F5F8FB;color:#002a5c}
+h1{text-align:center}
+label{font-weight:bold;display:block;margin-top:12px}
+input,button{padding:8px;width:100%;margin-top:4px;box-sizing:border-box}
+.result{margin-top:20px;padding:12px;border:1px solid #ccc;border-radius:6px;background:#fff}
+</style></head><body>
+<h1>DU0564 – Se-75</h1>
+<label>Usage Date T1</label><input type="date" id="date1">
+<button onclick="calc()">Calculate</button>
+<div id="out" class="result" style="display:none"></div>
+<script>
+function calc(){
+  const date1=new Date(document.getElementById('date1').value);
+  if(isNaN(date1)){alert('Pick a date');return;}
+  const act0=66.33;
+  const date0=new Date('2024-11-19');
+  const dt=(date1-date0)/(1000*3600*24);
+  const half=120;
+  const ref=67;
+  const gbq=act0*37*Math.pow(2,-dt/half);
+  const dose=gbq*ref;
+  const T=0.42;
+  const d10=Math.round(Math.sqrt(dose*T/10)*10)/10;
+  const d40=Math.round(Math.sqrt(dose*T/40)*10)/10;
+  document.getElementById('out').innerHTML=`10 µSv/h side/back: ${d10} m<br>40 µSv/h side/back: ${d40} m`;
+  document.getElementById('out').style.display='block';
+}
+</script></body></html>
