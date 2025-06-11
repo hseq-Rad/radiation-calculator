@@ -1,7 +1,7 @@
-
-<!DOCTYPE html><html lang='en'><head>
-<meta charset='UTF-8'><title>DU0566 – Ir-192</title>
-<meta name='viewport' content='width=device-width, initial-scale=1'>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<title>DU0566 – Ir-192</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body{font-family:Arial,sans-serif;max-width:640px;margin:auto;padding:20px;background:#F5F8FB;color:#002a5c}
 h1{text-align:center;margin:6px 0}
@@ -12,7 +12,7 @@ input,button{padding:8px;margin-top:4px;width:100%;box-sizing:border-box;border:
 button{background:#002a5c;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-top:16px}
 button:hover{background:#014f86}
 .result{margin-top:20px;padding:16px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
-.field{display:flex;justify-content:space-between;flex-wrap:wrap}
+.field-pair{display:flex;justify-content:space-between;flex-wrap:wrap}
 footer{text-align:center;margin-top:26px;font-size:0.85em;color:#555}
 </style></head>
 <body>
@@ -22,32 +22,56 @@ footer{text-align:center;margin-top:26px;font-size:0.85em;color:#555}
 <div class='info-box'>
 <table style='width:100%;font-size:0.9em'>
 <tr><td><strong>Container</strong></td><td>DU0566</td></tr>
-<tr><td><strong>Source SN</strong></td><td>D14472</td></tr>
+<tr><td><strong>Source SN</strong></td><td>D14472</td></tr>
 <tr><td><strong>Isotope</strong></td><td>Ir-192</td></tr>
-<tr><td><strong>Activity T0</strong></td><td>80.3 Ci</td></tr>
-<tr><td><strong>Date T0</strong></td><td>26-05-2025</td></tr>
+<tr><td><strong>Activity T0</strong></td><td>80.3 Ci</td></tr>
+<tr><td><strong>Date T0</strong></td><td>26-05-2025</td></tr>
 <tr><td><strong>T<sub>side</sub></strong></td><td>0.02</td></tr>
-</table></div>
+</table>
+</div>
 
 <div style='text-align:center;margin-top:10px'><img src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNzAnIGhlaWdodD0nNzAnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnPjxjaXJjbGUgY3g9JzUwJyBjeT0nNTAnIHI9JzQwJyBmaWxsPSdub25lJyBzdHJva2U9JyMwMDJhNWMnIHN0cm9rZS13aWR0aD0nNCcgc3Ryb2tlLWRhc2hhcnJheT0nNiA2Jy8+PGNpcmNsZSBjeD0nNTAnIGN5PSc1MCcgcj0nNScgZmlsbD0nIzAwMmE1YycvPjwvc3ZnPg==' alt='diagram'></div>
 
-<label>Usage Date T1</label><input type='date' id='d1'>
-<button onclick='calc()'>Calculate</button>
-<div id='res' class='result' style='display:none'></div>
+<label>Usage Date T1</label>
+<input type='date' id='date1'/>
+<button onclick='calc();'>Calculate distances</button>
 
-<footer>&copy; 2025 Mistras Group BVBA</footer>
+<div id='out' class='result' style='display:none'></div>
+
+<div style='font-size:0.9em;margin-top:14px;line-height:1.35em'>
+<strong>Guidance:</strong><br>
+• Aim for ≤ <b>10 µSv/h</b> in routinely occupied areas.<br>
+• <b>40 µSv/h</b> is allowed only if access ≤ 25 % of the time.<br>
+</div>
+
+<footer>&copy; 2025 Mistras Group BVBA – Internal use only</footer>
 
 <script>
-const act0=80.3, date0='2025-05-26', halfLife=74, refDose=127, Tside=0.02;
+const act0=80.3;
+const date0=new Date("2025-05-26");
+const halfLife=74;
+const refDose=127;
+const Tside=0.02;
+
 function calc(){
- const dStr=document.getElementById('d1').value;
- if(!dStr){alert('Pick date');return;}
- const dt=(new Date(dStr)-new Date(date0))/(1000*3600*24);
- const actT1=act0*37*Math.pow(2,-dt/halfLife);
- const dose=actT1*refDose;
- const d10=Math.round(Math.sqrt(dose*Tside/10)*10)/10;
- const d40=Math.round(Math.sqrt(dose*Tside/40)*10)/10;
- document.getElementById('res').innerHTML='<b>10 µSv/h:</b> '+d10+' m<br><b>40 µSv/h:</b> '+d40+' m';
- document.getElementById('res').style.display='block';
+  const useDate=document.getElementById('date1').value;
+  if(!useDate){alert('Select usage date');return;}
+  const dt=(new Date(useDate)-date0)/(1000*3600*24);
+  const GBq=act0*37*Math.pow(2,-dt/halfLife);
+  const dose1m=GBq*refDose;
+
+  const d10=Math.round(Math.sqrt(dose1m*Tside/10)*10)/10;
+  const d40=Math.round(Math.sqrt(dose1m*Tside/40)*10)/10;
+
+  document.getElementById('out').innerHTML=
+    '<h2>Results</h2>'+
+    '<div class="field-pair"><p><strong>Half‑life:</strong></p><p>'+halfLife+' d</p></div>'+
+    '<div class="field-pair"><p><strong>Ref. Dose‑rate:</strong></p><p>'+refDose+' µSv/h·GBq</p></div>'+
+    '<div class="field-pair"><p><strong>Activity T1:</strong></p><p>'+ (GBq/37).toFixed(2)+' Ci ('+GBq.toFixed(0)+' GBq)</p></div>'+
+    '<div class="field-pair"><p><strong>Dose @1 m:</strong></p><p>'+dose1m.toFixed(0)+' µSv/h</p></div>'+
+    '<hr>'+
+    '<div class="field-pair"><p>10 µSv/h (side/back):</p><p><b>'+d10+' m</b></p></div>'+
+    '<div class="field-pair"><p>40 µSv/h (side/back):</p><p><b>'+d40+' m</b></p></div>';
+  document.getElementById('out').style.display='block';
 }
 </script></body></html>
