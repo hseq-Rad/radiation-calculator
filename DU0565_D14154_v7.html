@@ -8,8 +8,8 @@
 <style>
  body{font-family:Arial, sans-serif;max-width:640px;margin:auto;padding:20px;background:#F5F8FB;color:#002a5c}
  h1{text-align:center;margin:6px 0}
- .logo{text-align:center}
- .logo img{max-height:60px}
+ .logo{text-align:center;margin-bottom:12px}
+ .logo img{max-height:60px;object-fit:contain}
  .info-box{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin-top:12px}
  label{font-weight:bold;display:block;margin-top:12px}
  input,button{padding:8px;margin-top:4px;width:100%;box-sizing:border-box;border:1px solid #bbb;border-radius:4px}
@@ -33,12 +33,12 @@
 <tr><td><strong>Isotope</strong></td><td>Se-75</td></tr>
 <tr><td><strong>Activity T0</strong></td><td>88.22 Ci</td></tr>
 <tr><td><strong>Date T0</strong></td><td>10-10-2024</td></tr>
-<tr><td><strong>Side/Back T<sub>side</sub></strong></td><td>0.42</td></tr>
+<tr><td><strong>Side/Back T<sub>side</sub></strong></td><td>0.03</td></tr>
 </table>
 </div>
 
 <div style="text-align:center;margin-top:10px">
-  <img src="data:image/svg+xml;base64,Cjxzdmcgd2lkdGg9IjcwIiBoZWlnaHQ9IjcwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KIDxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDJhNWMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWRhc2hhcnJheT0iNiA2Ii8+CiA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1IiBmaWxsPSIjMDAyYTVjIi8+CiA8dGV4dCB4PSI1MCIgeT0iOTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMmE1YyI+UGVyaW1ldGVyPC90ZXh0Pgo8L3N2Zz4K" alt="perimeter diagram">
+  <img src="data:image/svg+xml;base64,Cjxzdmcgd2lkdGg9IjcwIiBoZWlnaHQ9IjcwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KIDxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDJhNWMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWRhc2hhcnJheT0iNiA2Ii8+CiA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1IiBmaWxsPSIjMDAyYTVjIi8+CiA8dGV4dCB4PSI1MCIgeT0iOTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMmE1YyI+UGVyaW1ldGVyPC90ZXh0Pgo8L3N2Zz4K" alt="Perimeter diagram">
 </div>
 
 <label>Usage Date T1</label>
@@ -60,7 +60,7 @@
 const iso = "Se-75";
 const act0 = 88.22;
 const date0 = "2024-10-10";
-const Tside = 0.42;
+const Tside = 0.03;
 const halfLife = (iso === 'Ir-192') ? 74 : 120;
 const refDose = (iso === 'Ir-192') ? 127 : 67;
 
