@@ -93,26 +93,17 @@
       color: #555;
     }
 
-    .warn {
-      color: #8a1c1c;
-      font-weight: bold;
-    }
-
-    h2, h3 {
-      margin-top: 0;
+    footer {
+      text-align: center;
+      margin-top: 28px;
+      font-size: 0.85em;
+      color: #555;
     }
 
     hr {
       border: 0;
       border-top: 1px solid #d8dee9;
       margin: 14px 0;
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 28px;
-      font-size: 0.85em;
-      color: #555;
     }
   </style>
 </head>
@@ -130,7 +121,7 @@
     </table>
   </div>
 
-  <label for="opening">Opening angle</label>
+  <label for="opening">Collimator opening</label>
   <select id="opening">
     <option value="90">90°</option>
     <option value="60">60°</option>
@@ -139,25 +130,16 @@
   <label for="date1">Usage date</label>
   <input type="date" id="date1" value="2026-04-17">
 
-  <label for="shieldFactor">Shielded transmission factor (outside open beam)</label>
-  <input type="number" id="shieldFactor" step="0.0001" min="0" placeholder="e.g. 0.03">
-
   <button type="button" id="calcBtn">Calculate distances</button>
 
   <div id="out" class="result" style="display:none;"></div>
 
   <div class="note">
-    <strong>Notes</strong><br><br>
-    This calculation uses:
-    <ul>
-      <li>Half-life Se-75 = <strong>120 days</strong></li>
-      <li>Dose-rate constant = <strong>67 µSv/h·GBq @ 1 m</strong></li>
-      <li>Open beam calculation for the selected tungsten collimator opening</li>
-    </ul>
-    <div class="small">
-      For the shielded direction outside the collimator opening, an actual transmission factor is required.
-      If this field is left empty, that part cannot be calculated.
-    </div>
+    <strong>Note</strong><br><br>
+    This calculator shows the distances for the <strong>open beam</strong> of the selected tungsten collimator opening.
+    <br><br>
+    Half-life Se-75 = <strong>120 days</strong><br>
+    Dose-rate constant = <strong>67 µSv/h·GBq @ 1 m</strong>
   </div>
 
   <footer>&copy; 2026 – Internal use only</footer>
@@ -179,14 +161,9 @@
       );
     }
 
-    function fmtDistance(value) {
-      return value.toFixed(1) + " m";
-    }
-
     function calc() {
       const inDate = document.getElementById("date1").value;
       const openingDeg = document.getElementById("opening").value;
-      const shieldFactorRaw = document.getElementById("shieldFactor").value.trim();
       const out = document.getElementById("out");
 
       if (!inDate) {
@@ -200,48 +177,19 @@
 
       const actT1_Ci = actRef_Ci * Math.pow(2, -dt / halfLife);
       const actT1_GBq = actT1_Ci * 37;
-      const dose1mOpen = actT1_GBq * refDose;
+      const dose1m = actT1_GBq * refDose;
 
-      const d10Open = Math.sqrt(dose1mOpen / 10);
-      const d40Open = Math.sqrt(dose1mOpen / 40);
-
-      let shieldHtml = "";
-      if (shieldFactorRaw !== "") {
-        const shieldFactor = Number(shieldFactorRaw);
-
-        if (isNaN(shieldFactor) || shieldFactor < 0) {
-          shieldHtml =
-            '<hr>' +
-            '<h3>Shielded direction (outside open beam)</h3>' +
-            '<p class="warn">Invalid transmission factor entered.</p>';
-        } else {
-          const dose1mShielded = dose1mOpen * shieldFactor;
-          const d10Shielded = Math.sqrt(dose1mShielded / 10);
-          const d40Shielded = Math.sqrt(dose1mShielded / 40);
-
-          shieldHtml =
-            '<hr>' +
-            '<h3>Shielded direction (outside open beam)</h3>' +
-            '<div class="field-pair"><p><strong>Dose @ 1 m outside open beam</strong></p><p><span class="highlight">' + dose1mShielded.toFixed(0) + ' µSv/h</span></p></div>' +
-            '<div class="field-pair"><p><strong>Distance for 10 µSv/h</strong></p><p><span class="highlight">' + fmtDistance(d10Shielded) + '</span></p></div>' +
-            '<div class="field-pair"><p><strong>Distance for 40 µSv/h</strong></p><p><span class="highlight">' + fmtDistance(d40Shielded) + '</span></p></div>' +
-            '<p class="small"><strong>Note:</strong> these distances apply to the shielded direction outside the open beam, using a transmission factor of ' + shieldFactor + '.</p>';
-        }
-      } else {
-        shieldHtml =
-          '<hr>' +
-          '<h3>Shielded direction (outside open beam)</h3>' +
-          '<p class="small">No transmission factor entered, so the shielded-direction distances cannot be calculated.</p>';
-      }
+      const d10 = Math.sqrt(dose1m / 10);
+      const d40 = Math.sqrt(dose1m / 40);
 
       out.innerHTML =
         '<h2>Results</h2>' +
         '<div class="field-pair"><p><strong>Activity on usage date</strong></p><p><span class="highlight">' + actT1_Ci.toFixed(2) + ' Ci (' + actT1_GBq.toFixed(0) + ' GBq)</span></p></div>' +
-        '<div class="field-pair"><p><strong>Dose @ 1 m in open beam</strong></p><p><span class="highlight">' + dose1mOpen.toFixed(0) + ' µSv/h</span></p></div>' +
-        '<div class="field-pair"><p><strong>Distance for 10 µSv/h</strong></p><p><span class="highlight">' + fmtDistance(d10Open) + '</span></p></div>' +
-        '<div class="field-pair"><p><strong>Distance for 40 µSv/h</strong></p><p><span class="highlight">' + fmtDistance(d40Open) + '</span></p></div>' +
-        '<p class="small"><strong>Note:</strong> these distances apply to the open beam of the ' + openingDeg + '° collimator.</p>' +
-        shieldHtml;
+        '<div class="field-pair"><p><strong>Dose @ 1 m in open beam</strong></p><p><span class="highlight">' + dose1m.toFixed(0) + ' µSv/h</span></p></div>' +
+        '<div class="field-pair"><p><strong>Distance for 10 µSv/h</strong></p><p><span class="highlight">' + d10.toFixed(1) + ' m</span></p></div>' +
+        '<div class="field-pair"><p><strong>Distance for 40 µSv/h</strong></p><p><span class="highlight">' + d40.toFixed(1) + ' m</span></p></div>' +
+        '<hr>' +
+        '<p class="small"><strong>Note:</strong> these distances apply to the open beam of the ' + openingDeg + '° collimator.</p>';
 
       out.style.display = "block";
     }
