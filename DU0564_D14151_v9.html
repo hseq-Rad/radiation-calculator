@@ -13,33 +13,43 @@
       background: #F5F8FB;
       color: #002a5c;
     }
+
     h1 {
       text-align: center;
       margin: 6px 0 14px 0;
       font-size: 1.7rem;
     }
-    .info-box, .result, .note {
+
+    .info-box,
+    .result,
+    .note {
       background: #fff;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
       padding: 14px;
       margin-top: 14px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.95em;
     }
+
     td {
       padding: 6px 4px;
       vertical-align: top;
     }
+
     label {
       font-weight: bold;
       display: block;
       margin-top: 14px;
     }
-    input, select, button {
+
+    input,
+    select,
+    button {
       padding: 10px;
       margin-top: 4px;
       width: 100%;
@@ -48,6 +58,7 @@
       border-radius: 4px;
       font-size: 1rem;
     }
+
     button {
       background: #002a5c;
       color: #fff;
@@ -55,32 +66,44 @@
       cursor: pointer;
       margin-top: 18px;
     }
+
     button:hover {
       background: #014f86;
     }
+
     .field-pair {
       display: flex;
       justify-content: space-between;
       gap: 20px;
       flex-wrap: wrap;
     }
+
     .field-pair p {
       margin: 6px 0;
       width: 48%;
     }
+
     .highlight {
       color: #000;
       font-weight: bold;
     }
+
     .small {
       font-size: 0.9em;
       color: #555;
     }
+
+    .warn {
+      color: #8a1c1c;
+      font-weight: bold;
+    }
+
     hr {
       border: 0;
       border-top: 1px solid #d8dee9;
       margin: 14px 0;
     }
+
     footer {
       text-align: center;
       margin-top: 28px;
@@ -99,18 +122,22 @@
       <tr><td><strong>Source number</strong></td><td>D14151</td></tr>
       <tr><td><strong>Reference date</strong></td><td>17-04-2026</td></tr>
       <tr><td><strong>Source strength on reference date</strong></td><td>23.54 Ci</td></tr>
-      <tr><td><strong>Material assumption</strong></td><td>Carbon steel (CS)</td></tr>
+      <tr><td><strong>Material assumption</strong></td><td>Carbon Steel (CS)</td></tr>
+      <tr><td><strong>CS attenuation model</strong></td><td>HVL = 8.0 mm (editable in code)</td></tr>
     </table>
   </div>
 
-  <label for="opening">Beam opening</label>
+  <label for="opening">Collimator opening</label>
   <select id="opening">
     <option value="90">90°</option>
     <option value="60">60°</option>
   </select>
 
-  <label for="thickness">Object thickness (mm, assumed CS)</label>
-  <input type="number" id="thickness" min="0" step="0.1" placeholder="e.g. 12.0">
+  <label for="thickness">Object thickness (mm CS)</label>
+  <input type="number" id="thickness" min="0" step="0.1" value="16.0">
+
+  <label for="distanceObj">Source-to-object distance (m)</label>
+  <input type="number" id="distanceObj" min="0.01" step="0.01" value="0.30">
 
   <label for="date1">Usage date</label>
   <input type="date" id="date1" value="2026-04-17">
@@ -121,16 +148,16 @@
 
   <div class="note">
     <strong>Note</strong><br><br>
-    This simplified version assumes:
+    This version calculates:
     <ul>
-      <li>Source: <strong>Se-75</strong></li>
-      <li>Material: <strong>carbon steel</strong></li>
-      <li>Half-life: <strong>120 days</strong></li>
-      <li>Dose-rate constant: <strong>67 µSv/h·GBq @ 1 m</strong></li>
+      <li>Free-beam dose at 1 m</li>
+      <li>Estimated transmitted dose after carbon steel</li>
+      <li>Distance for 10 µSv/h after transmission</li>
+      <li>Distance for 40 µSv/h after transmission</li>
+      <li>Beam diameter at object position for 60° or 90° opening</li>
     </ul>
     <div class="small">
-      The current calculation shows the open-beam result.  
-      Thickness is already included as an input for the next step, but a validated attenuation model for Se-75 in carbon steel is still required before using thickness in the transmitted-dose calculation.
+      If your internal carbon steel attenuation value differs, edit the constant <strong>HVL_MM_CS</strong> in the script.
     </div>
   </div>
 
@@ -140,7 +167,8 @@
     const actRef_Ci = 23.54;
     const refDate = "2026-04-17";
     const halfLife = 120;
-    const refDose = 67;
+    const refDose = 67;      // µSv/h per GBq @ 1 m
+    const HVL_MM_CS = 8.0;   // assumed HVL for carbon steel in mm
 
     function parseDateLocal(yyyyMMdd) {
       const parts = yyyyMMdd.split("-");
@@ -153,8 +181,9 @@
 
     function calc() {
       const inDate = document.getElementById("date1").value;
-      const openingDeg = document.getElementById("opening").value;
-      const thickness = document.getElementById("thickness").value;
+      const openingDeg = Number(document.getElementById("opening").value);
+      const thickness = Number(document.getElementById("thickness").value);
+      const distanceObj = Number(document.getElementById("distanceObj").value);
       const out = document.getElementById("out");
 
       if (!inDate) {
@@ -162,8 +191,13 @@
         return;
       }
 
-      if (thickness === "") {
-        alert("Please enter the object thickness in mm.");
+      if (isNaN(thickness) || thickness < 0) {
+        alert("Please enter a valid object thickness in mm.");
+        return;
+      }
+
+      if (isNaN(distanceObj) || distanceObj <= 0) {
+        alert("Please enter a valid source-to-object distance in meters.");
         return;
       }
 
@@ -173,21 +207,42 @@
 
       const actT1_Ci = actRef_Ci * Math.pow(2, -dt / halfLife);
       const actT1_GBq = actT1_Ci * 37;
-      const dose1m = actT1_GBq * refDose;
 
-      const d10 = Math.sqrt(dose1m / 10);
-      const d40 = Math.sqrt(dose1m / 40);
+      const dose1mFree = actT1_GBq * refDose;
+
+      // Carbon steel attenuation using HVL model
+      const transmissionFactor = Math.pow(0.5, thickness / HVL_MM_CS);
+      const dose1mTransmitted = dose1mFree * transmissionFactor;
+
+      const d10 = Math.sqrt(dose1mTransmitted / 10);
+      const d40 = Math.sqrt(dose1mTransmitted / 40);
+
+      // Beam diameter at object position
+      // opening is full angle, so radius = tan(angle/2) * distance
+      const beamRadiusObj = Math.tan((openingDeg / 2) * Math.PI / 180) * distanceObj;
+      const beamDiameterObj = beamRadiusObj * 2;
+
+      let warning = "";
+      if (dt < 0) {
+        warning = '<p class="warn">Warning: selected date is before the reference date. The calculation is performed backward in time.</p>';
+      }
 
       out.innerHTML =
         '<h2>Results</h2>' +
+        warning +
         '<div class="field-pair"><p><strong>Opening</strong></p><p><span class="highlight">' + openingDeg + '°</span></p></div>' +
-        '<div class="field-pair"><p><strong>Object thickness</strong></p><p><span class="highlight">' + Number(thickness).toFixed(1) + ' mm CS</span></p></div>' +
+        '<div class="field-pair"><p><strong>Object thickness</strong></p><p><span class="highlight">' + thickness.toFixed(1) + ' mm CS</span></p></div>' +
+        '<div class="field-pair"><p><strong>Source-to-object distance</strong></p><p><span class="highlight">' + distanceObj.toFixed(2) + ' m</span></p></div>' +
+        '<div class="field-pair"><p><strong>Beam diameter at object</strong></p><p><span class="highlight">' + beamDiameterObj.toFixed(3) + ' m</span></p></div>' +
+        '<hr>' +
         '<div class="field-pair"><p><strong>Activity on usage date</strong></p><p><span class="highlight">' + actT1_Ci.toFixed(2) + ' Ci (' + actT1_GBq.toFixed(0) + ' GBq)</span></p></div>' +
-        '<div class="field-pair"><p><strong>Dose @ 1 m in open beam</strong></p><p><span class="highlight">' + dose1m.toFixed(0) + ' µSv/h</span></p></div>' +
+        '<div class="field-pair"><p><strong>Dose @ 1 m in free beam</strong></p><p><span class="highlight">' + dose1mFree.toFixed(0) + ' µSv/h</span></p></div>' +
+        '<div class="field-pair"><p><strong>Transmission factor through CS</strong></p><p><span class="highlight">' + transmissionFactor.toFixed(4) + '</span></p></div>' +
+        '<div class="field-pair"><p><strong>Dose @ 1 m after object</strong></p><p><span class="highlight">' + dose1mTransmitted.toFixed(0) + ' µSv/h</span></p></div>' +
         '<div class="field-pair"><p><strong>Distance for 10 µSv/h</strong></p><p><span class="highlight">' + d10.toFixed(1) + ' m</span></p></div>' +
         '<div class="field-pair"><p><strong>Distance for 40 µSv/h</strong></p><p><span class="highlight">' + d40.toFixed(1) + ' m</span></p></div>' +
         '<hr>' +
-        '<p class="small"><strong>Note:</strong> these distances currently apply to the open beam. Opening ' + openingDeg + '° and thickness ' + Number(thickness).toFixed(1) + ' mm are shown on the report, with carbon steel assumed.</p>';
+        '<p class="small"><strong>Note:</strong> 60° and 90° affect the beam diameter at the object. The transmitted dose after carbon steel is based on the selected thickness and the assumed HVL value for CS.</p>';
 
       out.style.display = "block";
     }
