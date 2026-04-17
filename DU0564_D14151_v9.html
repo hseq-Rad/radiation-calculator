@@ -2,10 +2,10 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>D14151 – Se-75 – Tungsten Collimator 90°</title>
+  <title>Se-75 – D14151 – Tungsten 90°</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body{
+    body {
       font-family: Arial, sans-serif;
       max-width: 760px;
       margin: auto;
@@ -13,43 +13,42 @@
       background: #F5F8FB;
       color: #002a5c;
     }
-    h1{
+
+    h1 {
       text-align: center;
       margin: 6px 0 14px 0;
       font-size: 1.7rem;
     }
-    .logo{
-      text-align: center;
-      margin-bottom: 12px;
-    }
-    .logo img{
-      max-height: 60px;
-      object-fit: contain;
-    }
+
     .info-box,
     .result,
-    .note{
+    .note {
       background: #fff;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
       padding: 14px;
       margin-top: 14px;
     }
-    table{
+
+    table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.95em;
     }
-    td{
+
+    td {
       padding: 6px 4px;
       vertical-align: top;
     }
-    label{
+
+    label {
       font-weight: bold;
       display: block;
       margin-top: 14px;
     }
-    input, button{
+
+    input,
+    button {
       padding: 10px;
       margin-top: 4px;
       width: 100%;
@@ -58,45 +57,54 @@
       border-radius: 4px;
       font-size: 1rem;
     }
-    button{
+
+    button {
       background: #002a5c;
       color: #fff;
       border: none;
       cursor: pointer;
       margin-top: 18px;
     }
-    button:hover{
+
+    button:hover {
       background: #014f86;
     }
-    .field-pair{
+
+    .field-pair {
       display: flex;
       justify-content: space-between;
       gap: 20px;
       flex-wrap: wrap;
     }
-    .field-pair p{
+
+    .field-pair p {
       margin: 6px 0;
       width: 48%;
     }
-    .highlight{
+
+    .highlight {
       color: #000;
       font-weight: bold;
     }
-    .small{
+
+    .small {
       font-size: 0.9em;
       color: #555;
     }
-    .warn{
+
+    .warn {
       color: #8a1c1c;
       font-weight: bold;
     }
-    footer{
+
+    footer {
       text-align: center;
       margin-top: 28px;
       font-size: 0.85em;
       color: #555;
     }
-    hr{
+
+    hr {
       border: 0;
       border-top: 1px solid #d8dee9;
       margin: 14px 0;
@@ -104,10 +112,6 @@
   </style>
 </head>
 <body>
-
-  <div class="logo">
-    <img src="logo.png" alt="Logo">
-  </div>
 
   <h1>Se-75 – Tungsten Collimator 90°</h1>
 
@@ -119,28 +123,27 @@
       <tr><td><strong>Bronsterkte op referentiedatum</strong></td><td>23.54 Ci</td></tr>
       <tr><td><strong>Collimator</strong></td><td>Tungsten</td></tr>
       <tr><td><strong>Opening</strong></td><td>90°</td></tr>
-      <tr><td><strong>Berekening</strong></td><td>Open bundel (binnen de 90° opening)</td></tr>
+      <tr><td><strong>Berekening</strong></td><td>Open bundel</td></tr>
     </table>
   </div>
 
   <label for="date1">Gebruiksdatum</label>
   <input type="date" id="date1">
 
-  <button onclick="calc()">Bereken afstanden</button>
+  <button type="button" id="calcBtn">Bereken afstanden</button>
 
-  <div id="out" class="result" style="display:none"></div>
+  <div id="out" class="result" style="display:none;"></div>
 
   <div class="note">
     <strong>Toelichting</strong><br><br>
     Deze berekening gebruikt:
     <ul>
-      <li>halfwaardetijd Se-75 = <strong>120 dagen</strong></li>
-      <li>dose-rate constant = <strong>67 µSv/h·GBq @ 1 m</strong></li>
-      <li>de <strong>open bundel</strong> van de collimator (90° opening)</li>
+      <li>Halfwaardetijd Se-75 = <strong>120 dagen</strong></li>
+      <li>Dose-rate constant = <strong>67 µSv/h·GBq @ 1 m</strong></li>
+      <li>De <strong>open bundel</strong> van de tungsten collimator met opening <strong>90°</strong></li>
     </ul>
     <div class="small">
-      Voor de afgeschermde zone buiten de opening is een specifieke transmissiefactor of certificaatwaarde
-      van de tungsten collimator nodig. Die is hier niet ingevuld.
+      Deze versie rekent dus niet met side/back shielding, enkel met de open bundel.
     </div>
   </div>
 
@@ -151,20 +154,32 @@
     const sourceNo = "D14151";
     const actRef_Ci = 23.54;
     const refDate = "2026-04-17";
-    const halfLife = 120;      // days
-    const refDose = 67;        // µSv/h per GBq at 1 m
+    const halfLife = 120;
+    const refDose = 67;
     const openingDeg = 90;
+
+    function parseDateLocal(yyyyMMdd) {
+      const parts = yyyyMMdd.split("-");
+      return new Date(
+        Number(parts[0]),
+        Number(parts[1]) - 1,
+        Number(parts[2])
+      );
+    }
 
     function calc() {
       const inDate = document.getElementById("date1").value;
+      const out = document.getElementById("out");
+
       if (!inDate) {
         alert("Selecteer eerst een gebruiksdatum.");
         return;
       }
 
-      const ref = new Date(refDate + "T00:00:00");
-      const use = new Date(inDate + "T00:00:00");
-      const dt = (use - ref) / (1000 * 3600 * 24);
+      const ref = parseDateLocal(refDate);
+      const use = parseDateLocal(inDate);
+
+      const dt = (use - ref) / (1000 * 60 * 60 * 24);
 
       const actT1_Ci = actRef_Ci * Math.pow(2, -dt / halfLife);
       const actT1_GBq = actT1_Ci * 37;
@@ -174,58 +189,35 @@
       const d40 = Math.sqrt(dose1m / 40);
 
       const dtLabel = dt >= 0
-        ? dt.toFixed(0) + " dagen na referentiedatum"
-        : Math.abs(dt).toFixed(0) + " dagen vóór referentiedatum";
+        ? Math.round(dt) + " dagen na referentiedatum"
+        : Math.abs(Math.round(dt)) + " dagen vóór referentiedatum";
 
       let warning = "";
       if (dt < 0) {
         warning = '<p class="warn">Opgelet: de gekozen datum ligt vóór 17-04-2026. De berekening rekent dan terug in de tijd.</p>';
       }
 
-      document.getElementById("out").innerHTML =
+      out.innerHTML =
         '<h2>Resultaten</h2>' +
         warning +
-        '<div class="field-pair">' +
-          '<p><strong>Bron</strong></p><p>' + iso + '</p>' +
-        '</div>' +
-        '<div class="field-pair">' +
-          '<p><strong>Bronnummer</strong></p><p>' + sourceNo + '</p>' +
-        '</div>' +
-        '<div class="field-pair">' +
-          '<p><strong>Collimator</strong></p><p>Tungsten – open bundel ' + openingDeg + '°</p>' +
-        '</div>' +
-        '<div class="field-pair">' +
-          '<p><strong>Tijdsverschil</strong></p><p>' + dtLabel + '</p>' +
-        '</div>' +
-        '<div class="field-pair">' +
-          '<p><strong>Halfwaardetijd</strong></p><p>' + halfLife + ' dagen</p>' +
-        '</div>' +
-        '<div class="field-pair">' +
-          '<p><strong>Dose-rate constant</strong></p><p>' + refDose + ' µSv/h·GBq</p>' +
-        '</div>' +
-        '<div class="field-pair">' +
-          '<p><strong>Activiteit op gebruiksdatum</strong></p>' +
-          '<p><span class="highlight">' + actT1_Ci.toFixed(2) + ' Ci</span> (' + actT1_GBq.toFixed(0) + ' GBq)</p>' +
-        '</div>' +
-        '<div class="field-pair">' +
-          '<p><strong>Dosis @ 1 m in open bundel</strong></p>' +
-          '<p><span class="highlight">' + dose1m.toFixed(0) + ' µSv/h</span></p>' +
-        '</div>' +
+        '<div class="field-pair"><p><strong>Bron</strong></p><p>' + iso + '</p></div>' +
+        '<div class="field-pair"><p><strong>Bronnummer</strong></p><p>' + sourceNo + '</p></div>' +
+        '<div class="field-pair"><p><strong>Collimator</strong></p><p>Tungsten – open bundel ' + openingDeg + '°</p></div>' +
+        '<div class="field-pair"><p><strong>Tijdsverschil</strong></p><p>' + dtLabel + '</p></div>' +
+        '<div class="field-pair"><p><strong>Halfwaardetijd</strong></p><p>' + halfLife + ' dagen</p></div>' +
+        '<div class="field-pair"><p><strong>Dose-rate constant</strong></p><p>' + refDose + ' µSv/h·GBq</p></div>' +
+        '<div class="field-pair"><p><strong>Activiteit op gebruiksdatum</strong></p><p><span class="highlight">' + actT1_Ci.toFixed(2) + ' Ci</span> (' + actT1_GBq.toFixed(0) + ' GBq)</p></div>' +
+        '<div class="field-pair"><p><strong>Dosis @ 1 m in open bundel</strong></p><p><span class="highlight">' + dose1m.toFixed(0) + ' µSv/h</span></p></div>' +
         '<hr>' +
-        '<div class="field-pair">' +
-          '<p><strong>Afstand voor 10 µSv/h</strong></p>' +
-          '<p><span class="highlight">' + d10.toFixed(1) + ' m</span></p>' +
-        '</div>' +
-        '<div class="field-pair">' +
-          '<p><strong>Afstand voor 40 µSv/h</strong></p>' +
-          '<p><span class="highlight">' + d40.toFixed(1) + ' m</span></p>' +
-        '</div>' +
+        '<div class="field-pair"><p><strong>Afstand voor 10 µSv/h</strong></p><p><span class="highlight">' + d10.toFixed(1) + ' m</span></p></div>' +
+        '<div class="field-pair"><p><strong>Afstand voor 40 µSv/h</strong></p><p><span class="highlight">' + d40.toFixed(1) + ' m</span></p></div>' +
         '<hr>' +
-        '<p class="small"><strong>Opmerking:</strong> deze afstanden gelden voor de <strong>open bundel</strong> van de collimator. ' +
-        'Voor de afgeschermde zones buiten de 90° opening is een afzonderlijke transmissiewaarde van de tungsten collimator nodig.</p>';
+        '<p class="small"><strong>Opmerking:</strong> deze afstanden gelden voor de open bundel van de 90° collimator.</p>';
 
-      document.getElementById("out").style.display = "block";
+      out.style.display = "block";
     }
+
+    document.getElementById("calcBtn").addEventListener("click", calc);
   </script>
 
 </body>
