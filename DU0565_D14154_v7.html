@@ -18,7 +18,7 @@
       margin: 6px 0 14px 0;
       font-size: 1.7rem;
     }
-    .info-box, .result, .note {
+    .info-box, .result {
       background: #fff;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
@@ -44,6 +44,7 @@
       width: 100%;
       border-radius: 4px;
       border: 1px solid #bbb;
+      box-sizing: border-box;
     }
     button {
       background: #002a5c;
@@ -56,6 +57,7 @@
       display: flex;
       justify-content: space-between;
       flex-wrap: wrap;
+      gap: 20px;
     }
     .field-pair p {
       width: 48%;
@@ -65,8 +67,12 @@
       font-weight: bold;
       color: #000;
     }
+    h2, h3 {
+      margin-bottom: 10px;
+    }
     hr {
       margin: 14px 0;
+      border: 0;
       border-top: 1px solid #d8dee9;
     }
   </style>
@@ -76,22 +82,22 @@
 <h1>Sentinel Delta 880 Ir-192</h1>
 
 <div class="info-box">
-<table>
-<tr><td><strong>Container</strong></td><td>DU0565</td></tr>
-<tr><td><strong>Source</strong></td><td>Ir-192</td></tr>
-<tr><td><strong>Source number</strong></td><td>D14154</td></tr>
-<tr><td><strong>Reference date</strong></td><td>17-04-2026</td></tr>
-<tr><td><strong>Source strength</strong></td><td>51.25 Ci</td></tr>
-<tr><td><strong>Material</strong></td><td>Carbon Steel (CS)</td></tr>
-<tr><td><strong>HVL</strong></td><td>8.0 mm</td></tr>
-</table>
+  <table>
+    <tr><td><strong>Container</strong></td><td>DU0565</td></tr>
+    <tr><td><strong>Source</strong></td><td>Ir-192</td></tr>
+    <tr><td><strong>Source number</strong></td><td>D14154</td></tr>
+    <tr><td><strong>Reference date</strong></td><td>17-04-2026</td></tr>
+    <tr><td><strong>Source strength</strong></td><td>51.25 Ci</td></tr>
+    <tr><td><strong>Material</strong></td><td>Carbon Steel (CS)</td></tr>
+    <tr><td><strong>HVL</strong></td><td>8.0 mm</td></tr>
+  </table>
 </div>
 
 <label>Object thickness (mm CS)</label>
-<input type="number" id="thickness" value="16">
+<input type="number" id="thickness" value="16" min="0" step="0.1">
 
 <label>Source-to-object distance (mm)</label>
-<input type="number" id="distance" value="300">
+<input type="number" id="distance" value="300" min="1" step="1">
 
 <label>Usage date</label>
 <input type="date" id="date1" value="2026-04-17">
@@ -101,43 +107,87 @@
 <div id="out" class="result" style="display:none"></div>
 
 <script>
-const act0 = 51.25;
+const act0 = 51.25;              // Ci
 const refDate = "2026-04-17";
-const halfLife = 74;
-const refDose = 127;
-const HVL = 8.0;
+const halfLife = 74;             // days
+const refDose = 127;             // µSv/h per GBq at 1 m
+const HVL = 8.0;                // mm CS
 
-function parseDate(d){
+function parseDate(d) {
   const p = d.split("-");
-  return new Date(p[0],p[1]-1,p[2]);
+  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
 }
 
-function calc(){
+function calc() {
   const d = document.getElementById("date1").value;
   const thickness = Number(document.getElementById("thickness").value);
+  const distanceMm = Number(document.getElementById("distance").value);
 
-  const dt = (parseDate(d) - parseDate(refDate))/(1000*3600*24);
+  if (!d) {
+    alert("Please select a usage date.");
+    return;
+  }
+  if (isNaN(thickness) || thickness < 0) {
+    alert("Please enter a valid object thickness.");
+    return;
+  }
+  if (isNaN(distanceMm) || distanceMm <= 0) {
+    alert("Please enter a valid source-to-object distance.");
+    return;
+  }
 
-  const act = act0 * Math.pow(2, -dt/halfLife);
+  const dt = (parseDate(d) - parseDate(refDate)) / (1000 * 3600 * 24);
+
+  const act = act0 * Math.pow(2, -dt / halfLife);     // Ci
   const GBq = act * 37;
 
-  const doseFree = GBq * refDose;
+  // Constant on beam axis: Dose(r) = K / r^2
+  // Since refDose is given at 1 m, K = dose at 1 m * 1^2
+  const K = GBq * refDose; // µSv/h·m²
 
-  const trans = Math.pow(0.5, thickness/HVL);
-  const doseAfter = doseFree * trans;
+  const distanceM = distanceMm / 1000;
 
-  const d10 = Math.sqrt(doseAfter/10);
-  const d40 = Math.sqrt(doseAfter/40);
+  // Free beam dose at 1 m from source
+  const doseFree1m = K;
+
+  // Free beam dose at object location
+  const doseAtObjectFree = K / (distanceM * distanceM);
+
+  // Transmission through carbon steel
+  const trans = Math.pow(0.5, thickness / HVL);
+
+  // Dose immediately after object
+  const doseAfterObject = doseAtObjectFree * trans;
+
+  // Solve for total distance from source where dose = limit
+  function totalDistanceFor(limit) {
+    return Math.sqrt((K * trans) / limit);
+  }
+
+  const total10 = totalDistanceFor(10);
+  const total40 = totalDistanceFor(40);
+
+  // Additional distance beyond object
+  const extra10 = Math.max(0, total10 - distanceM);
+  const extra40 = Math.max(0, total40 - distanceM);
 
   document.getElementById("out").innerHTML =
-    '<h2>Results</h2>'+
-    '<div class="field-pair"><p>Activity</p><p class="highlight">'+act.toFixed(2)+' Ci ('+GBq.toFixed(0)+' GBq)</p></div>'+
-    '<div class="field-pair"><p>Dose @1m free</p><p class="highlight">'+doseFree.toFixed(0)+' µSv/h</p></div>'+
-    '<div class="field-pair"><p>Dose after CS</p><p class="highlight">'+doseAfter.toFixed(0)+' µSv/h</p></div>'+
-    '<div class="field-pair"><p>Distance 10 µSv/h</p><p class="highlight">'+d10.toFixed(1)+' m</p></div>'+
-    '<div class="field-pair"><p>Distance 40 µSv/h</p><p class="highlight">'+d40.toFixed(1)+' m</p></div>';
+    '<h2>Results</h2>' +
+    '<div class="field-pair"><p>Activity</p><p class="highlight">' + act.toFixed(2) + ' Ci (' + GBq.toFixed(0) + ' GBq)</p></div>' +
+    '<div class="field-pair"><p>Dose @ 1 m free</p><p class="highlight">' + doseFree1m.toFixed(0) + ' µSv/h</p></div>' +
+    '<div class="field-pair"><p>Dose at object (free beam)</p><p class="highlight">' + doseAtObjectFree.toFixed(0) + ' µSv/h</p></div>' +
+    '<div class="field-pair"><p>Transmission factor through CS</p><p class="highlight">' + trans.toFixed(4) + '</p></div>' +
+    '<div class="field-pair"><p>Dose just after object</p><p class="highlight">' + doseAfterObject.toFixed(0) + ' µSv/h</p></div>' +
+    '<hr>' +
+    '<h3>Required distance behind object</h3>' +
+    '<div class="field-pair"><p>Additional distance for 10 µSv/h</p><p class="highlight">' + extra10.toFixed(2) + ' m</p></div>' +
+    '<div class="field-pair"><p>Additional distance for 40 µSv/h</p><p class="highlight">' + extra40.toFixed(2) + ' m</p></div>' +
+    '<hr>' +
+    '<h3>Total distance from source</h3>' +
+    '<div class="field-pair"><p>Total distance for 10 µSv/h</p><p class="highlight">' + total10.toFixed(2) + ' m</p></div>' +
+    '<div class="field-pair"><p>Total distance for 40 µSv/h</p><p class="highlight">' + total40.toFixed(2) + ' m</p></div>';
 
-  document.getElementById("out").style.display='block';
+  document.getElementById("out").style.display = 'block';
 }
 </script>
 
