@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sentinel Delta 880 Se-75</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 760px;
+      margin: auto;
+      padding: 20px;
+      background: #F5F8FB;
+      color: #002a5c;
+    }
+    h1 {
+      text-align: center;
+      margin: 6px 0 14px 0;
+      font-size: 1.7rem;
+    }
+    .info-box, .result {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95em;
+    }
+    td {
+      padding: 6px 4px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 14px;
+    }
+    input, button {
+      padding: 10px;
+      margin-top: 4px;
+      width: 100%;
+      border-radius: 4px;
+      border: 1px solid #bbb;
+      box-sizing: border-box;
+    }
+    button {
+      background: #002a5c;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      margin-top: 18px;
+    }
+    .field-pair {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .field-pair p {
+      width: 48%;
+      margin: 6px 0;
+    }
+    .highlight {
+      font-weight: bold;
+      color: #000;
+    }
+    hr {
+      margin: 14px 0;
+      border-top: 1px solid #d8dee9;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Sentinel Delta 880 Se-75</h1>
+
+<div class="info-box">
+<table>
+<tr><td><strong>Container</strong></td><td>DU0569</td></tr>
+<tr><td><strong>Source</strong></td><td>Se-75</td></tr>
+<tr><td><strong>Source number</strong></td><td>D18076</td></tr>
+<tr><td><strong>Reference date</strong></td><td>17-04-2026</td></tr>
+<tr><td><strong>Source strength</strong></td><td>31.23 Ci</td></tr>
+<tr><td><strong>Material</strong></td><td>Carbon Steel (CS)</td></tr>
+<tr><td><strong>HVL</strong></td><td>8.0 mm</td></tr>
+</table>
+</div>
+
+<label>Object thickness (mm CS)</label>
+<input type="number" id="thickness" value="16">
+
+<label>Source-to-object distance (mm)</label>
+<input type="number" id="distance" value="300">
+
+<label>Usage date</label>
+<input type="date" id="date1" value="2026-04-17">
+
+<button onclick="calc()">Calculate</button>
+
+<div id="out" class="result" style="display:none"></div>
+
+<script>
+const act0 = 31.23;
+const refDate = "2026-04-17";
+const halfLife = 120;
+const refDose = 67;
+const HVL = 8.0;
+
+function parseDate(d){
+  const p = d.split("-");
+  return new Date(p[0],p[1]-1,p[2]);
+}
+
+function calc(){
+  const d = document.getElementById("date1").value;
+  const thickness = Number(document.getElementById("thickness").value);
+  const distanceMm = Number(document.getElementById("distance").value);
+
+  const dt = (parseDate(d) - parseDate(refDate))/(1000*3600*24);
+
+  const act = act0 * Math.pow(2, -dt/halfLife);
+  const GBq = act * 37;
+
+  const K = GBq * refDose;
+
+  const distanceM = distanceMm / 1000;
+
+  const doseFree1m = K;
+  const doseAtObject = K / (distanceM * distanceM);
+
+  const trans = Math.pow(0.5, thickness / HVL);
+  const doseAfter = doseAtObject * trans;
+
+  function totalDist(limit){
+    return Math.sqrt((K * trans)/limit);
+  }
+
+  const total10 = totalDist(10);
+  const total40 = totalDist(40);
+
+  const extra10 = Math.max(0, total10 - distanceM);
+  const extra40 = Math.max(0, total40 - distanceM);
+
+  document.getElementById("out").innerHTML =
+    '<h2>Results</h2>'+
+    '<div class="field-pair"><p>Activity</p><p class="highlight">'+act.toFixed(2)+' Ci ('+GBq.toFixed(0)+' GBq)</p></div>'+
+    '<div class="field-pair"><p>Dose @ 1 m free</p><p class="highlight">'+doseFree1m.toFixed(0)+' µSv/h</p></div>'+
+    '<div class="field-pair"><p>Dose at object</p><p class="highlight">'+doseAtObject.toFixed(0)+' µSv/h</p></div>'+
+    '<div class="field-pair"><p>Transmission</p><p class="highlight">'+trans.toFixed(4)+'</p></div>'+
+    '<div class="field-pair"><p>Dose after object</p><p class="highlight">'+doseAfter.toFixed(0)+' µSv/h</p></div>'+
+    '<hr>'+
+    '<h3>Behind object</h3>'+
+    '<div class="field-pair"><p>Extra distance 10 µSv/h</p><p class="highlight">'+extra10.toFixed(2)+' m</p></div>'+
+    '<div class="field-pair"><p>Extra distance 40 µSv/h</p><p class="highlight">'+extra40.toFixed(2)+' m</p></div>'+
+    '<hr>'+
+    '<h3>Total from source</h3>'+
+    '<div class="field-pair"><p>Total 10 µSv/h</p><p class="highlight">'+total10.toFixed(2)+' m</p></div>'+
+    '<div class="field-pair"><p>Total 40 µSv/h</p><p class="highlight">'+total40.toFixed(2)+' m</p></div>';
+
+  document.getElementById("out").style.display='block';
+}
+</script>
+
+</body>
+</html>
